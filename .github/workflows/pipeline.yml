@@ -1,0 +1,74 @@
+name: multi-source-data-scout pipeline
+
+on:
+  schedule:
+    # Every 6 hours (UTC) — data refresh cadence.
+    - cron: "0 */6 * * *"
+  workflow_dispatch: {}
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: scout-pipeline
+  cancel-in-progress: true
+
+jobs:
+  run-pipeline:
+    name: Scrape + enrich + load + evaluate
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Cache Playwright browsers
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: ${{ runner.os }}-ms-playwright-v1
+          restore-keys: |
+            ${{ runner.os }}-ms-playwright-
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Install Chromium for Playwright
+        run: python -m playwright install --with-deps chromium
+
+      - name: Run pipeline
+        shell: bash
+        id: pipeline
+        run: |
+          set -o pipefail
+          python run_pipeline.py --db data/scout.db 2>&1 | tee pipeline.log
+
+      - name: Upload artifacts (SQLite DB, evaluation doc, run log)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: scout-output
+          path: |
+            data/scout.db
+            docs/source_evaluation.md
+            pipeline.log
+          if-no-files-found: error
+          retention-days: 14
+
+      # The gate: run_pipeline.py already exits 1 when any stage's failed-rows
+      # ratio exceeds the threshold (default 5%). This explicit check makes the
+      # failure mode obvious in the Actions UI.
+      - name: Fail build on error-rate gate breach
+        if: steps.pipeline.outcome == 'failure'
+        run: |
+          echo "::error::Pipeline finished with a stage error-rate breach (>5% failed rows)."
+          echo "See pipeline.log / the uploaded artifact for stage-by-stage failed_ratio."
+          exit 1

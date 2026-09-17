@@ -1,0 +1,2 @@
+Keep the data/ directory tracked in git without committing generated artifacts.
+The SQLite DB (data/scout.db) and API cache (data/api_cache/) are regenerated per run and ignored via .gitignore.

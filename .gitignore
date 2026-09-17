@@ -1,0 +1,56 @@
+# --- Python ---------------------------------------------------------------
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.python-version
+
+# --- Virtual environments / package managers -------------------------------
+.venv/
+venv/
+env/
+.env
+.direnv/
+
+# Keep the documented template tracked
+!.env.example
+
+# --- Databases / generated data -------------------------------------------
+*.db
+*.sqlite
+*.sqlite3
+*.db-shm
+*.db-wal
+# Keep the data/ directory in git via .gitkeep but never the generated DB/cache
+data/*
+!data/.gitkeep
+
+# --- Generated outputs / artifacts ------------------------------------------
+# The evaluation doc is regenerated on every pipeline run.
+docs/source_evaluation.md
+logs/
+*.log
+dist/
+build/
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# --- Playwright browser binaries & cache ------------------------------------
+.ms-playwright/
+~/.cache/ms-playwright/
+playwright-report/
+test-results/
+
+# --- OS / editor junk --------------------------------------------------------
+.DS_Store
+Thumbs.db
+Desktop.ini
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
