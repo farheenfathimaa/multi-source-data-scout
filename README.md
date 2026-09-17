@@ -1,4 +1,4 @@
-# multi-source-data-scout
+# Multi Source Data Scout
 
 A data-collection pipeline that combines **browser-based web scraping** (Playwright, async, headless)
 with a **public API** (Open Library), **evaluates the quality of each source**, and lands clean,
