@@ -10,8 +10,15 @@ from __future__ import annotations
 import os
 from pathlib import Path
 
+from dotenv import load_dotenv
+
 # --- Paths ------------------------------------------------------------------
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
+
+# Load .env as early as possible so import-time knobs (e.g. LLM_SUMMARY_ENABLED
+# reading GROQ_API_KEY) see the file. run_pipeline.py also calls load_dotenv in
+# main() as a belt-and-suspenders fallback; it is a no-op when already loaded.
+load_dotenv(PROJECT_ROOT / ".env")
 PACKAGE_DIR = Path(__file__).resolve().parent
 
 DEFAULT_DATA_DIR = PROJECT_ROOT / "data"
@@ -76,7 +83,7 @@ ERROR_THRESHOLD = _env_float("SCOUT_ERROR_THRESHOLD", 0.05)
 LLM_SUMMARY_ENABLED = _env_bool(
     "SCOUT_LLM_SUMMARY", os.environ.get("GROQ_API_KEY") is not None
 )
-GROQ_MODEL = "llama-3.3-70b-versatile"
+GROQ_MODEL = "openai/gpt-oss-20b"
 GROQ_TIMEOUT_SECONDS = 60
 
 BOOKS_RATING_SCALE = (1, 5)

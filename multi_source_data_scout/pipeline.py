@@ -208,7 +208,21 @@ async def run_pipeline(opts: RunOptions) -> PipelineReport:
         report.stages.append(ea.finish())
 
         # ------------------------------------------------------------------
-        # Evaluation doc + optional LLM summary
+        # Optional LLM summary (generated before the doc so it can be embedded)
+        # ------------------------------------------------------------------
+        llm: bool = opts.llm_summary if opts.llm_summary is not None else config.LLM_SUMMARY_ENABLED
+        if llm:
+            report.llm_summary = summarize_run(report, os.environ.get("GROQ_API_KEY"))
+        else:
+            log.info("LLM summary skipped (no API key configured)")
+        report.stages.append(
+            StageMetrics("llm.summary")
+            .updates(detail={"enabled": bool(llm), "generated": bool(report.llm_summary)})
+            .finish()
+        )
+
+        # ------------------------------------------------------------------
+        # Evaluation doc (embeds the LLM summary when present)
         # ------------------------------------------------------------------
         counts = db.counts()
         write_evaluation(
@@ -222,17 +236,6 @@ async def run_pipeline(opts: RunOptions) -> PipelineReport:
         )
         report.stages.append(
             StageMetrics("evaluate").updates(detail={"output": str(config.EVALUATION_PATH)}).finish()
-        )
-
-        llm: bool = opts.llm_summary if opts.llm_summary is not None else config.LLM_SUMMARY_ENABLED
-        if llm:
-            report.llm_summary = summarize_run(report, os.environ.get("GROQ_API_KEY"))
-        else:
-            log.info("LLM summary skipped (no API key configured)")
-        report.stages.append(
-            StageMetrics("llm.summary")
-            .updates(detail={"enabled": bool(llm), "generated": bool(report.llm_summary)})
-            .finish()
         )
 
         status = "failed" if report.breaches_threshold else "ok"
